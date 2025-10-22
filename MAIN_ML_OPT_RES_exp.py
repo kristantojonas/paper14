@@ -21,7 +21,7 @@ def model_full_search_to_excel(df, target, y_cols, exclude_hier_cols,
     results = []
     best_config = None
 
-    for rs in range(33,n_states):
+    for rs in range(0, n_states):
         X_train, X_test, y_train, y_test = prepare_data(
             df, target, y_cols, rs,
             exclude_hier_cols=exclude_hier_cols, test_size=test_size
@@ -39,10 +39,14 @@ def model_full_search_to_excel(df, target, y_cols, exclude_hier_cols,
                 "rand_state": rs,
                 "MD": None,
                 "NE": None,
-                "Train MSE": metrics_df.loc["train", "MSE"],
-                "Train R2":  metrics_df.loc["train", "R2"],
-                "Test MSE":  metrics_df.loc["test", "MSE"],
-                "Test R2":   metrics_df.loc["test", "R2"]
+                "Train MAE":  metrics_df.loc["train", "MAE"],
+                "Train MAPE": metrics_df.loc["train", "MAPE"],
+                "Train RMSE": metrics_df.loc["train", "RMSE"],
+                "Train R2":   metrics_df.loc["train", "R2"],
+                "Test MAE":   metrics_df.loc["test", "MAE"],
+                "Test MAPE":  metrics_df.loc["test", "MAPE"],
+                "Test RMSE":  metrics_df.loc["test", "RMSE"],
+                "Test R2":    metrics_df.loc["test", "R2"]
             }
             results.append(row)
             save_realtime(filename, model_type, results)
@@ -69,10 +73,14 @@ def model_full_search_to_excel(df, target, y_cols, exclude_hier_cols,
                     "rand_state": rs,
                     "MD": md,
                     "NE": ne,
-                    "Train MSE": metrics_df.loc["train", "MSE"],
-                    "Train R2":  metrics_df.loc["train", "R2"],
-                    "Test MSE":  metrics_df.loc["test", "MSE"],
-                    "Test R2":   metrics_df.loc["test", "R2"]
+                    "Train MAE":  metrics_df.loc["train", "MAE"],
+                    "Train MAPE": metrics_df.loc["train", "MAPE"],
+                    "Train RMSE": metrics_df.loc["train", "RMSE"],
+                    "Train R2":   metrics_df.loc["train", "R2"],
+                    "Test MAE":   metrics_df.loc["test", "MAE"],
+                    "Test MAPE":  metrics_df.loc["test", "MAPE"],
+                    "Test RMSE":  metrics_df.loc["test", "RMSE"],
+                    "Test R2":    metrics_df.loc["test", "R2"]
                 }
                 results.append(row)
                 save_realtime(filename, model_type, results)
@@ -94,7 +102,11 @@ def save_realtime(filename, sheet_name, results):
 # MAIN SCRIPT
 # =====================
 y_cols = ['Liquid','Gas','Solid']
-y_col_now = ['Liquid','Gas','Solid']
+y_col_now = [
+    # 'Liquid',
+    'Gas',
+    # 'Solid'
+    ]
 X_ops = ['Particle Size (mm)', 'Temperature (C)', 'Residence Time (h)',
          'Carrier Gas (mL/min)', 'Heating Rate (C/h)']
 
@@ -105,13 +117,14 @@ df = PREPREPROCESSING(df)
 
 # Run automatically for each target and model
 for target in y_col_now:
-    for model in ["rf", "gbt"]:
+    for model in [
+            # "rf",
+            "gbt"
+            ]:
         filename = f"exp_{model}_results_{target}.xlsx"
-        # print(f"\n🚀 Running {model.upper()} search for target = {target} ...")
         results, best = model_full_search_to_excel(
             df, target=target, y_cols=y_cols, exclude_hier_cols=X_ops,
-            MD=np.geomspace(1,50,10,dtype=int),
-            NE=np.geomspace(1,100,10,dtype=int),
-            n_states=34, model_type=model, filename=filename
+            MD=[17],#np.geomspace(1, 50, 10, dtype=int),
+            NE=[34],#np.geomspace(1, 100, 10, dtype=int),
+            n_states=50, model_type=model, filename=filename
         )
-        # print(f"Best config for {target}: {best}")

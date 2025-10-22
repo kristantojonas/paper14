@@ -1,11 +1,11 @@
 import pandas as pd
 
 # Column groups
-ligcol = ['Cellulose', 'Hemicellulose', 'Lignin']
+ligcol = ['Cellulose (%)', 'Hemicellulose (%)', 'Lignin (%)']
 ycol   = ['Gas', 'Liquid', 'Solid']
-ucol   = ['Sulfur', 'Carbon', 'Hydrogen', 'Nitrogen', 'Oxygen']
-pcol   = ['Ash', 'Volatiles', 'Fixed Carbon']
-moisture_col = 'Moisture'  # for fixed carbon group
+ucol   = ['Sulfur (%)', 'Carbon (%)', 'Hydrogen (%)', 'Nitrogen (%)', 'Oxygen (%)']
+pcol   = ['Ash (%)', 'Volatiles (%)', 'Fixed Carbon (%)']
+moisture_col = 'Moisture (%)'  # for fixed carbon group
 
 # --- Normalization Functions ---
 
@@ -26,8 +26,8 @@ def normalize_sulfur_optional(df, columns):
     df_copy = df.copy()
     for i in df.index:
         row = df_copy.loc[i, columns]
-        if row.isna().sum() == 1 and pd.isna(row['Sulfur']):
-            values = row.drop('Sulfur')
+        if row.isna().sum() == 1 and pd.isna(row['Sulfur (%)']):
+            values = row.drop('Sulfur (%)')
             total = values.sum()
             if total == 0:
                 continue
@@ -42,7 +42,7 @@ def normalize_sulfur_optional(df, columns):
             df_copy.loc[i, columns] = normalized.values
     return df_copy
 
-def normalize_except_moisture(df, target_cols, moisture_col='Moisture'):
+def normalize_except_moisture(df, target_cols, moisture_col='Moisture (%)'):
     df_copy = df.copy()
     for i in df.index:
         if pd.isna(df_copy.loc[i, moisture_col]):

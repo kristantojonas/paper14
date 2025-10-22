@@ -8,17 +8,20 @@ import matplotlib
 matplotlib.use('Agg')  # ensures plots are not displayed
 
 def model_full_search_to_excel(df, target, y_cols, exclude_hier_cols,
-                               MD, NE, rand_states,
-                               test_size=0.25,
+                               MD=[5, 10, 20, None], NE=[50, 100, 200],
+                               n_states=10, test_size=0.25,
                                model_type="rf",
                                filename="results_all.xlsx"):
     """
-    Run search for specific target with specific random states and hyperparams.
+    Run full grid search with multiple random states for RF, GBT, or Linear Regression,
+    export results to Excel in real-time, and overwrite the best config’s
+    plot + importances + metrics Excel if a better Test R2 is found
+    AND Train R2 > Test R2.
     """
     results = []
     best_config = None
 
-    for rs in rand_states:
+    for rs in range(0, n_states):
         X_train, X_test, y_train, y_test = prepare_data_wgf(
             df, target, y_cols, rs,
             exclude_hier_cols=exclude_hier_cols, test_size=test_size
@@ -36,10 +39,14 @@ def model_full_search_to_excel(df, target, y_cols, exclude_hier_cols,
                 "rand_state": rs,
                 "MD": None,
                 "NE": None,
-                "Train MSE": metrics_df.loc["train", "MSE"],
-                "Train R2":  metrics_df.loc["train", "R2"],
-                "Test MSE":  metrics_df.loc["test", "MSE"],
-                "Test R2":   metrics_df.loc["test", "R2"]
+                "Train MAE":  metrics_df.loc["train", "MAE"],
+                "Train MAPE": metrics_df.loc["train", "MAPE"],
+                "Train RMSE": metrics_df.loc["train", "RMSE"],
+                "Train R2":   metrics_df.loc["train", "R2"],
+                "Test MAE":   metrics_df.loc["test", "MAE"],
+                "Test MAPE":  metrics_df.loc["test", "MAPE"],
+                "Test RMSE":  metrics_df.loc["test", "RMSE"],
+                "Test R2":    metrics_df.loc["test", "R2"]
             }
             results.append(row)
             save_realtime(filename, model_type, results)
@@ -66,16 +73,19 @@ def model_full_search_to_excel(df, target, y_cols, exclude_hier_cols,
                     "rand_state": rs,
                     "MD": md,
                     "NE": ne,
-                    "Train MSE": metrics_df.loc["train", "MSE"],
-                    "Train R2":  metrics_df.loc["train", "R2"],
-                    "Test MSE":  metrics_df.loc["test", "MSE"],
-                    "Test R2":   metrics_df.loc["test", "R2"]
+                    "Train MAE":  metrics_df.loc["train", "MAE"],
+                    "Train MAPE": metrics_df.loc["train", "MAPE"],
+                    "Train RMSE": metrics_df.loc["train", "RMSE"],
+                    "Train R2":   metrics_df.loc["train", "R2"],
+                    "Test MAE":   metrics_df.loc["test", "MAE"],
+                    "Test MAPE":  metrics_df.loc["test", "MAPE"],
+                    "Test RMSE":  metrics_df.loc["test", "RMSE"],
+                    "Test R2":    metrics_df.loc["test", "R2"]
                 }
                 results.append(row)
                 save_realtime(filename, model_type, results)
 
     return pd.DataFrame(results), best_config
-
 
 def save_realtime(filename, sheet_name, results):
     """Helper to write results incrementally into Excel (per model sheet)."""
@@ -92,6 +102,11 @@ def save_realtime(filename, sheet_name, results):
 # MAIN SCRIPT
 # =====================
 y_cols = ['Liquid','Gas','Solid']
+y_col_now = [
+    # 'Liquid',
+    'Gas',
+    # 'Solid'
+    ]
 X_ops = ['Particle Size (mm)', 'Temperature (C)', 'Residence Time (h)',
          'Carrier Gas (mL/min)', 'Heating Rate (C/h)']
 
@@ -100,33 +115,16 @@ df_raw = pd.read_excel('RAW ML.xlsx', skiprows=1)
 df = df_raw[df_raw.columns.difference(['No.', 'First Author','Family','Genus'])]
 df = PREPREPROCESSING(df)
 
-# Custom configs per target
-configs = {
-    "Gas": {
-        "rand_states": [33],#[44],
-        "MD": np.geomspace(1, 50, 10, dtype=int),
-        "NE": np.geomspace(1, 100, 10, dtype=int)
-    },
-    "Liquid": {
-        "rand_states": [33],#[17],
-        "MD": np.geomspace(1, 50, 10, dtype=int),
-        "NE": np.geomspace(1, 100, 10, dtype=int)
-    },
-    "Solid": {
-        "rand_states": [33],#[14],
-        "MD": np.geomspace(1, 50, 10, dtype=int),
-        "NE": np.geomspace(1, 100, 10, dtype=int)
-    }
-}
-
 # Run automatically for each target and model
-for target, cfg in configs.items():
-    for model in ["rf", "gbt"]:
-        filename = f"wgf_exp_{model}_results_{target}.xlsx"
+for target in y_col_now:
+    for model in [
+            # "rf",
+            "gbt"
+            ]:
+        filename = f"opt_wgf_exp_{model}_results_{target}.xlsx"
         results, best = model_full_search_to_excel(
             df, target=target, y_cols=y_cols, exclude_hier_cols=X_ops,
-            MD=cfg["MD"], NE=cfg["NE"],
-            rand_states=cfg["rand_states"],
-            model_type=model,
-            filename=filename
+            MD=[16],#np.geomspace(1, 50, 10, dtype=int),
+            NE=[28],#np.geomspace(1, 100, 10, dtype=int),
+            n_states=50, model_type=model, filename=filename
         )
